@@ -1,0 +1,72 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum StatusKaryawan {
+  active
+  noactive
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Karyawan {
+  id              Int               @id @default(autoincrement())
+  username        String            @unique @db.VarChar(100)
+  nama            String            @db.VarChar(100)
+  password        String            @db.VarChar(100)
+  status          StatusKaryawan    @default(noactive)
+  JabatanKaryawan JabatanKaryawan[]
+
+  @@map("karyawan")
+}
+
+model Jabatan {
+  id                 Int                  @id @default(autoincrement())
+  namaJabatan        String               @unique @db.VarChar(100)
+  JabatanKaryawan    JabatanKaryawan[]
+  Jabatan_PeranAkses Jabatan_PeranAkses[]
+
+  @@map("jabatan")
+}
+
+model JabatanKaryawan {
+  karyawanId Int      @db.Integer
+  karyawan   Karyawan @relation(fields: [karyawanId], references: [id])
+  jabatanId  Int      @db.Integer
+  jabatan    Jabatan  @relation(fields: [jabatanId], references: [id])
+
+  @@id([karyawanId, jabatanId])
+  @@map("jabatanKaryawan")
+}
+
+model PeranAkses {
+  id        Int    @id @default(autoincrement())
+  namaAkses String @db.VarChar(100)
+  parentId  Int?
+
+  parent             PeranAkses?          @relation("SubPeranAkses", fields: [parentId], references: [id])
+  children           PeranAkses[]         @relation("SubPeranAkses")
+  Jabatan_PeranAkses Jabatan_PeranAkses[]
+
+  @@map("peranAkses")
+}
+
+model Jabatan_PeranAkses {
+  jabatanId Int     @db.Integer
+  jabatan   Jabatan @relation(fields: [jabatanId], references: [id])
+
+  peranId Int @db.Integer
+
+  peranAkses PeranAkses @relation(fields: [peranId], references: [id])
+
+  @@id([jabatanId, peranId])
+}
